@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Virtual Lab</title>
+</head>
+<body>
+  <h1>Virtual Lab</h1>
+  <p id="uid-display">Loading...</p>
+
+  <script type="module">
+    // Firebase Config (punya kamu)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC1Fho5b99jL4-H4j_OFtSKmt8TV1X2PdM",
+      authDomain: "greatchem12.firebaseapp.com",
+      projectId: "greatchem12",
+      storageBucket: "greatchem12.firebasestorage.app",
+      messagingSenderId: "1083119029036",
+      appId: "1:1083119029036:web:596c450f7ba58138767a89",
+      measurementId: "G-MX4CCYK774"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+
+    // 🔥 Ambil query parameter dari URL
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("userId");
+
+    // Tampilkan di halaman
+    document.getElementById("uid-display").innerText =
+      userId ? `User ID: ${userId}` : "User ID tidak ditemukan";
+
+    // Contoh: kalau mau simpan userId di localStorage
+    if (userId) {
+      localStorage.setItem("firebaseUserId", userId);
+    }
+  </script>
+</body>
+</html>
