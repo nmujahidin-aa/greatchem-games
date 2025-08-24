@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Drag & Drop Puzzle</title>
+  <style>
+    :root{
+      --board-size: min(78vmin, 720px);
+      --gap: 8px;
+      --radius: 18px;
+      --brand: #6c5ce7;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --bg: #0b1020;
+      --card: #11162a;
+      --accent: #22c55e;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Helvetica,sans-serif;
+      color:#e5e7eb; background: radial-gradient(1200px 600px at 15% 10%, #1a2240 0%, #0a0f20 55%, #04060d 100%);
+      display:flex; align-items:center; justify-content:center; padding:22px;
+    }
+    .app{width:100%; max-width:1200px}
+
+    .header{
+      display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .title{
+      display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:0.3px;
+    }
+    .logo{width:40px; height:40px; border-radius:12px; display:grid; place-items:center; background:linear-gradient(135deg,#7c3aed,#22c55e); box-shadow:0 6px 20px #0008}
+    .title span{font-size: clamp(18px, 2vw, 22px)}
+
+    .panel{
+      background: linear-gradient(180deg, #0f1630, #0b1228);
+      border:1px solid #223;
+      border-radius: 18px; padding: 14px; box-shadow: inset 0 1px 0 #ffffff10, 0 10px 30px #0005;
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .panel .group{display:flex; align-items:center; gap:8px; background:#0c1530; border:1px solid #1f2740; padding:10px 12px; border-radius:14px}
+    .panel label{font-size:12px; color:#9fb0d4}
+    select, button, input[type="file"]{
+      appearance:none; border:none; outline:none; color:#e2e8f0; background:#121a36;
+      padding:10px 12px; border-radius:12px; border:1px solid #283050;
+    }
+    button{
+      cursor:pointer; background:linear-gradient(135deg,#6c5ce7, #22c55e);
+      border:none; color:white; font-weight:700; letter-spacing:.2px; box-shadow:0 8px 20px #0006;
+      transition: transform .08s ease;
+    }
+    button:active{ transform: translateY(1px) scale(.99); }
+    .ghost-toggle{display:flex; align-items:center; gap:10px; padding:8px 12px; background:#0c1530; border:1px solid #1f2740; border-radius:14px}
+    .switch{position:relative; width:48px; height:26px; background:#223; border-radius:30px; cursor:pointer}
+    .switch::after{content:""; position:absolute; width:22px; height:22px; background:white; border-radius:50%; top:2px; left:2px; transition:.2s}
+    .switch.active{background:#22c55e}
+    .switch.active::after{left:24px}
+
+    .layout{display:grid; grid-template-columns: 1fr min(380px, 40%); gap:16px}
+    @media (max-width: 980px){ .layout{grid-template-columns: 1fr} }
+
+    .board-wrap{
+      display:grid; place-items:center; padding:14px; background:linear-gradient(180deg,#0f1630,#0b1228);
+      border:1px solid #223; border-radius:18px; position:relative;
+    }
+    .board{
+      width: var(--board-size); height: var(--board-size); position:relative; user-select:none; touch-action:none;
+      border-radius: var(--radius); background:#0b1226; box-shadow: inset 0 0 0 1px #1d2746, inset 0 8px 40px #0005;
+    }
+    .grid-overlay{
+      position:absolute; inset:0; border-radius:var(--radius); pointer-events:none; opacity:.28; transition:.2s; background-size:var(--cell) var(--cell); background-image: linear-gradient(#fff2 1px, transparent 1px), linear-gradient(90deg, #fff2 1px, transparent 1px);
+    }
+
+    .piece{
+      position:absolute; width:var(--cell); height:var(--cell); border-radius:12px; background-size: var(--board-size) var(--board-size);
+      box-shadow: 0 8px 26px #0008, inset 0 0 0 1px #0006; cursor:grab; transition: box-shadow .15s ease;
+      will-change: transform; touch-action:none;
+    }
+    .piece:active{ cursor:grabbing; box-shadow: 0 10px 30px #000b, inset 0 0 0 1px #0009; }
+
+    .sidebar{
+      background: linear-gradient(180deg, #0f1630, #0b1228);
+      border:1px solid #223; border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:12px;
+    }
+    .stat{
+      display:flex; align-items:center; justify-content:space-between; background:#0c1530; border:1px solid #1f2740; padding:12px 14px; border-radius:14px; color:#c9d4ee;
+    }
+    .thumb{ width:100%; aspect-ratio:1/1; border-radius:14px; overflow:hidden; background:#111a35; display:grid; place-items:center; position:relative; }
+    .thumb img{ width:100%; height:100%; object-fit:cover; display:block; opacity:.85 }
+    .thumb .hint{ position:absolute; inset:6px; border-radius:12px; border:2px dashed #ffffff55 }
+
+    .footer{ margin-top:10px; color:#8aa0d0; font-size:12px; opacity:.9 }
+    .kbd{ background:#1a2244; border:1px solid #2a3460; padding:2px 6px; border-radius:6px; font-size:12px }
+    .win{
+      position:absolute; inset:0; display:none; place-items:center; border-radius:18px; background:linear-gradient(#0008,#0009);
+      color:white; text-align:center; padding:20px; z-index:50;
+    }
+    .win.show{ display:grid; }
+    .win .card{ background:#0f1530; border:1px solid #2a3566; padding:20px; border-radius:18px; box-shadow:0 20px 60px #000a; }
+    .win h2{ margin:0 0 8px 0 }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="title">
+      <div class="logo">🧩</div>
+      <span>Drag & Drop Puzzle – interaktif</span>
+    </div>
+    <div class="panel">
+      <div class="group">
+        <label>Ukuran Grid</label>
+        <select id="gridSize">
+          <option value="3">3 × 3</option>
+          <option value="4" selected>4 × 4</option>
+          <option value="5">5 × 5</option>
+          <option value="6">6 × 6</option>
+        </select>
+      </div>
+      <div class="group">
+        <label>Gambar</label>
+        <select id="presetImg">
+          <option value="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop">Aurora</option>
+          <option value="https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1600&auto=format&fit=crop">Gunung</option>
+          <option value="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1600&auto=format&fit=crop">Laut</option>
+          <option value="custom">Upload…</option>
+        </select>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </div>
+      <button id="shuffleBtn">Acak</button>
+      <button id="newBtn">Game Baru</button>
+      <div class="ghost-toggle">
+        <label>Lihat Hint</label>
+        <div id="hintSwitch" class="switch" role="switch" aria-checked="false" tabindex="0"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="board-wrap">
+      <div class="board" id="board" aria-label="Papan Puzzle">
+        <div class="grid-overlay" id="gridOverlay"></div>
+        <div class="win" id="win">
+          <div class="card">
+            <h2>🎉 Selamat!</h2>
+            <p id="winText">Kamu menyelesaikan puzzle.</p>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px">
+              <button id="againBtn">Main Lagi</button>
+              <button id="shareBtn">Bagikan Skor</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="stat"><span>Waktu</span><strong id="time">00:00</strong></div>
+      <div class="stat"><span>Langkah</span><strong id="moves">0</strong></div>
+      <div class="stat"><span>Ukuran</span><strong id="sizeTxt">4 × 4</strong></div>
+      <div class="thumb">
+        <img id="thumb" alt="Preview" />
+        <div class="hint" id="hintBorder" hidden></div>
+      </div>
+      <div class="footer">
+        Tips: drag & drop untuk memindah. Tahan <span class="kbd">H</span> untuk hint. Double‑tap/klik cepat untuk rotate acak.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const board = document.getElementById('board');
+  const gridOverlay = document.getElementById('gridOverlay');
+  const gridSelect = document.getElementById('gridSize');
+  const presetImg = document.getElementById('presetImg');
+  const fileInput = document.getElementById('fileInput');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const newBtn = document.getElementById('newBtn');
+  const hintSwitch = document.getElementById('hintSwitch');
+  const movesEl = document.getElementById('moves');
+  const timeEl = document.getElementById('time');
+  const sizeTxt = document.getElementById('sizeTxt');
+  const thumb = document.getElementById('thumb');
+  const hintBorder = document.getElementById('hintBorder');
+  const win = document.getElementById('win');
+  const againBtn = document.getElementById('againBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const winText = document.getElementById('winText');
+
+  let N = 4;
+  let IMG = presetImg.value;
+  let cell, boardSize;
+  let pieces = [];
+  let occupied = new Map(); // key: r,c => piece id
+  let moves = 0; let timer = 0; let ticking = null; let finished = false;
+
+  function fmtTime(s){ const m=Math.floor(s/60).toString().padStart(2,'0'); const ss=(s%60).toString().padStart(2,'0'); return `${m}:${ss}` }
+
+  function setBoardVars(){
+    boardSize = Math.min(window.innerWidth*0.78, 720);
+    board.style.setProperty('--board-size', boardSize+'px');
+    cell = Math.floor((boardSize - (N-1)*0) / N);
+    board.style.setProperty('--cell', cell+'px');
+    gridOverlay.style.backgroundSize = `${cell}px ${cell}px`;
+  }
+
+  function buildPieces(){
+    // reset
+    board.querySelectorAll('.piece').forEach(p => p.remove());
+    pieces = [];
+    occupied.clear();
+
+    // generate piece data
+    for(let r=0;r<N;r++){
+      for(let c=0;c<N;c++){
+        const id = r*N + c;
+        const el = document.createElement('div');
+        el.className = 'piece';
+        el.dataset.id = id;
+        el.dataset.correct = `${r},${c}`;
+        el.style.backgroundImage = `url('${IMG}')`;
+        el.style.backgroundPosition = `${(-c*100/N)}% ${(-r*100/N)}%`;
+        el.style.backgroundSize = `${100}% ${100}%`;
+        board.appendChild(el);
+        pieces.push(el);
+      }
+    }
+
+    // place in solved order first, then shuffle
+    layoutSolved();
+    randomizePositions();
+    attachPointer();
+  }
+
+  function layoutSolved(){
+    let i=0;
+    for(let r=0;r<N;r++){
+      for(let c=0;c<N;c++){
+        const el = pieces[i++];
+        placeAtCell(el, r, c);
+      }
+    }
+  }
+
+  function key(r,c){ return `${r},${c}` }
+
+  function placeAtCell(el, r, c){
+    const x = c*cell; const y = r*cell;
+    el.style.transform = `translate(${x}px, ${y}px)`;
+    el.dataset.r = r; el.dataset.c = c;
+    occupied.set(key(r,c), el.dataset.id);
+  }
+
+  function randomizePositions(){
+    // simple Fisher–Yates over target cells
+    const cells = [];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) cells.push([r,c]);
+    for(let i=cells.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [cells[i], cells[j]] = [cells[j], cells[i]];
+    }
+    occupied.clear();
+    pieces.forEach((el, idx)=>{
+      const [r,c] = cells[idx];
+      placeAtCell(el, r, c);
+    });
+    // ensure not already solved
+    if(isSolved()) randomizePositions();
+  }
+
+  function isSolved(){
+    return pieces.every(el => el.dataset.correct === key(+el.dataset.r, +el.dataset.c));
+  }
+
+  function startTimer(){ clearInterval(ticking); timer = 0; timeEl.textContent = fmtTime(0); ticking = setInterval(()=>{ timer++; timeEl.textContent = fmtTime(timer) }, 1000) }
+  function stopTimer(){ clearInterval(ticking); }
+
+  function newGame(){
+    finished = false; win.classList.remove('show');
+    N = +gridSelect.value; sizeTxt.textContent = `${N} × ${N}`;
+    setBoardVars();
+    buildPieces();
+    moves = 0; movesEl.textContent = '0';
+    startTimer();
+    setThumb();
+  }
+
+  function setThumb(){ thumb.src = IMG }
+
+  function openWin(){
+    finished = true; stopTimer();
+    winText.textContent = `Ukuran ${N}×${N} terselesaikan dalam ${fmtTime(timer)} dengan ${moves} langkah.`;
+    win.classList.add('show');
+  }
+
+  // Drag & Drop via Pointer Events + swap if target occupied
+  function attachPointer(){
+    let dragging = null, startX=0, startY=0, baseX=0, baseY=0, lastTap=0;
+
+    const onDown = (e)=>{
+      if(finished) return;
+      const el = e.target.closest('.piece');
+      if(!el) return;
+      dragging = el; dragging.setPointerCapture(e.pointerId);
+      const m = dragging.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
+      baseX = m? +m[1] : 0; baseY = m? +m[2] : 0;
+      startX = e.clientX; startY = e.clientY;
+      dragging.style.zIndex = 10;
+    }
+    const onMove = (e)=>{
+      if(!dragging) return;
+      const dx = e.clientX - startX; const dy = e.clientY - startY;
+      dragging.style.transform = `translate(${baseX+dx}px, ${baseY+dy}px)`;
+    }
+    const onUp = (e)=>{
+      if(!dragging) return;
+      dragging.releasePointerCapture(e.pointerId);
+      dragging.style.zIndex = '';
+
+      // locate nearest cell
+      const rect = board.getBoundingClientRect();
+      const m = dragging.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
+      const tx = m? +m[1] : 0; const ty = m? +m[2] : 0;
+      const cx = Math.max(0, Math.min(N-1, Math.round(tx / cell)));
+      const cy = Math.max(0, Math.min(N-1, Math.round(ty / cell)));
+
+      const targetKey = key(cy, cx);
+      const fromKey = key(+dragging.dataset.r, +dragging.dataset.c);
+
+      if(targetKey === fromKey){
+        // snap back to its original cell
+        placeAtCell(dragging, +dragging.dataset.r, +dragging.dataset.c);
+        dragging = null; return;
+      }
+
+      const occ = occupied.get(targetKey);
+      occupied.delete(fromKey);
+
+      if(occ != null){
+        // swap
+        const other = pieces.find(p => p.dataset.id === String(occ));
+        placeAtCell(other, +dragging.dataset.r, +dragging.dataset.c);
+      }
+      placeAtCell(dragging, cy, cx);
+
+      moves++; movesEl.textContent = moves;
+      dragging = null;
+      if(isSolved()) openWin();
+    }
+
+    // Double click/tap shuffle small rotate (visual flair)
+    const onClick = (e)=>{
+      const now = Date.now();
+      if(now - lastTap < 280){ randomizePositions(); moves=0; movesEl.textContent='0'; }
+      lastTap = now;
+    }
+
+    board.addEventListener('pointerdown', onDown);
+    board.addEventListener('pointermove', onMove);
+    board.addEventListener('pointerup', onUp);
+    board.addEventListener('pointercancel', onUp);
+    board.addEventListener('click', onClick);
+  }
+
+  // Controls
+  shuffleBtn.addEventListener('click', ()=>{ randomizePositions(); moves=0; movesEl.textContent='0'; startTimer(); finished=false; win.classList.remove('show'); });
+  newBtn.addEventListener('click', newGame);
+  againBtn.addEventListener('click', ()=>{ win.classList.remove('show'); randomizePositions(); moves=0; movesEl.textContent='0'; startTimer(); finished=false; });
+  shareBtn.addEventListener('click', async ()=>{
+    const text = `Aku baru selesaikan puzzle ${N}×${N} dalam ${fmtTime(timer)} dengan ${moves} langkah!`;
+    if(navigator.share){ try{ await navigator.share({text}); }catch{} } else { navigator.clipboard.writeText(text); alert('Skor disalin ke clipboard!'); }
+  });
+
+  gridSelect.addEventListener('change', newGame);
+  presetImg.addEventListener('change', ()=>{
+    if(presetImg.value === 'custom') fileInput.click(); else { IMG = presetImg.value; setThumb(); buildPieces(); moves=0; movesEl.textContent='0'; startTimer(); finished=false; win.classList.remove('show'); }
+  });
+  fileInput.addEventListener('change', (e)=>{
+    const f = e.target.files?.[0];
+    if(!f) return; const url = URL.createObjectURL(f); IMG = url; setThumb(); buildPieces(); moves=0; movesEl.textContent='0'; startTimer(); finished=false; win.classList.remove('show');
+  });
+
+  // Hint toggle
+  function setHint(on){
+    hintSwitch.classList.toggle('active', on);
+    hintBorder.hidden = !on;
+    document.getElementById('gridOverlay').style.opacity = on? .5 : .28;
+  }
+  hintSwitch.addEventListener('click', ()=> setHint(!hintSwitch.classList.contains('active')));
+  hintSwitch.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); setHint(!hintSwitch.classList.contains('active')) } });
+
+  // Keyboard hint (hold H)
+  let hintHeld=false; let hintTO=null;
+  window.addEventListener('keydown', (e)=>{
+    if(e.key.toLowerCase()==='h' && !hintHeld){ hintHeld=true; setHint(true); clearTimeout(hintTO); }
+  });
+  window.addEventListener('keyup', (e)=>{
+    if(e.key.toLowerCase()==='h'){ hintHeld=false; hintTO=setTimeout(()=>setHint(false), 120); }
+  });
+
+  // Resize handler
+  window.addEventListener('resize', ()=>{ setBoardVars(); // re-snap pieces to grid
+    pieces.forEach(el => { placeAtCell(el, +el.dataset.r, +el.dataset.c) });
+  });
+
+  // Init
+  function init(){ setBoardVars(); setThumb(); buildPieces(); startTimer(); setHint(false); }
+  init();
+})();
+</script>
+</body>
+</html>
