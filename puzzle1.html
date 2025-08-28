@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puzzle Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #43a047, #1b5e20);
+      color: #fff;
+    }
+    #puzzle-board {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="level-title">Puzzle</h1>
+  <div id="puzzle-board"></div>
+
+  <script>
+    // Ambil parameter dari URL
+    const params = new URLSearchParams(window.location.search);
+    const level = params.get("level");
+    const userId = params.get("userId");
+
+    // Tampilkan judul sesuai level
+    document.getElementById("level-title").innerText = `Puzzle Level ${level}`;
+
+    // Contoh: beda ukuran grid sesuai level
+    let size = 2; // default 2x2
+    if (level == 2) size = 3;
+    if (level == 3) size = 4;
+    if (level == 4) size = 5;
+
+    // Di sini nanti kamu panggil fungsi buat generate puzzle sesuai ukuran
+    console.log(`User ${userId} sedang main level ${level} (${size}x${size})`);
+  </script>
+</body>
+</html>
