@@ -23,18 +23,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Ambil userId dari URL
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("userId");
 
-    // Fungsi update Firestore
     async function markLevelComplete() {
       if (!userId) return;
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { level1: true });
     }
 
-    // Export ke window biar bisa dipanggil dari bawah
     window.markLevelComplete = markLevelComplete;
     window.userId = userId;
   </script>
@@ -71,7 +68,7 @@
 </head>
 <body>
   <h1>Pengaruh Katalis</h1>
-  <p style="margin-top:-10px; text-align: center;">Urutkan fenomena pengaruh katalis terhadap laju reaksi pada puzzle berikut</p>
+  <p style="margin-top:-10px; text-align: center; padding: 0 10px;">Urutkan fenomena pengaruh katalis terhadap laju reaksi pada puzzle berikut</p>
   <div id="puzzle-board"></div>
 
   <script>

@@ -49,40 +49,45 @@
     h1 { margin-bottom: 10px; }
     #puzzle-board {
       display: grid;
-      grid-template-columns: repeat(2, 150px);
-      grid-template-rows: repeat(2, 150px);
-      gap: 5px;
+      grid-template-columns: repeat(3, 1fr); 
+      grid-template-rows: repeat(3, 1fr);
+      gap: 3px;
+      width: 90vw; 
+      max-width: 400px;
+      aspect-ratio: 1 / 1;
       background: #fff;
-      padding: 5px;
+      padding: 3px;
       border-radius: 10px;
     }
     .piece {
-      width: 150px;
-      height: 150px;
-      background-size: 300px 300px;
+      width: 100%;
+      height: 100%;
+      background-size: 300% 300%; 
       cursor: grab;
-      border-radius: 8px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <h1>Pengaruh Luas Permukaan</h1>
-  <p style="margin-top:-10px; text-align: center;">Urutkan fenomena pengaruh luas permukaan terhadap laju reaksi pada puzzle berikut</p>
+  <h1 style="text-align: center;">Pengaruh Luas Permukaan</h1>
+  <p style="margin-top:-10px; text-align: center; padding: 0 10px;">Urutkan fenomena pengaruh luas permukaan terhadap laju reaksi pada puzzle berikut</p>
   <div id="puzzle-board"></div>
 
   <script>
     const board = document.getElementById("puzzle-board");
+    const size = 5;
+    const image = "images/level_4.jpg";
 
-    board.style.gridTemplateColumns = "repeat(5, 150px)";
-    board.style.gridTemplateRows = "repeat(5, 150px)";
+    board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    board.style.gridTemplateRows = `repeat(${size}, 1fr)`;
 
     const pieces = [];
     let id = 0;
-    for (let row = 0; row < 5; row++) {
-      for (let col = 0; col < 5; col++) {
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
         pieces.push({
           id: id++,
-          bg: `-${col * 150}px -${row * 150}px`
+          bg: `-${(100/ (size-1)) * col}% -${(100/(size-1)) * row}%`
         });
       }
     }
@@ -92,10 +97,8 @@
     shuffled.forEach((p) => {
       const div = document.createElement("div");
       div.classList.add("piece");
-      div.style.width = "150px";
-      div.style.height = "150px";
-      div.style.backgroundImage = "url('images/level_4.jpg')";
-      div.style.backgroundSize = "750px 750px";
+      div.style.backgroundImage = `url('${image}')`;
+      div.style.backgroundSize = `${size*100}% ${size*100}%`; 
       div.style.backgroundPosition = p.bg;
       div.setAttribute("data-id", p.id);
       div.setAttribute("draggable", "true");
@@ -103,10 +106,7 @@
     });
 
     let dragSrc = null;
-
-    function handleDragStart() {
-      dragSrc = this;
-    }
+    function handleDragStart() { dragSrc = this; }
     function handleDrop() {
       if (dragSrc !== this) {
         let temp = this.style.backgroundPosition;
@@ -141,19 +141,10 @@
           title: "Selamat 🎉",
           text: "Puzzle berhasil disusun dengan benar!",
           confirmButtonColor: "#43a047"
-        }).then(async () => {
-          try {
-            await window.markLevelComplete();
-            window.location.href = `index.html?userId=${window.userId}`;
-          } catch (err) {
-            console.error("Gagal update Firestore:", err);
-            Swal.fire("Error", "Tidak bisa update progress!", "error");
-          }
         });
       }
     }
   </script>
-
 
 </body>
 </html>
