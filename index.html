@@ -21,139 +21,83 @@
     <footer></footer>
   </div>
 
-  <script>
-    // Function to show custom alert message
-    function showCustomAlert(message) {
-      const modal = document.getElementById('customAlertModal');
-      const alertMessage = document.getElementById('alertMessage');
-      const closeButton = document.getElementById('closeAlertModal');
-      const okButton = document.getElementById('okAlertButton');
-
-      alertMessage.innerText = message;
-      modal.style.display = 'flex'; // Use flex to center content in modal
-
-      // Remove previous event listeners to prevent multiple firings
-      const closeHandler = () => {
-        modal.style.display = 'none';
-        closeButton.removeEventListener('click', closeHandler);
-        okButton.removeEventListener('click', closeHandler);
-      };
-
-      closeButton.addEventListener('click', closeHandler);
-      okButton.addEventListener('click', closeHandler);
-    }
-
-    // Global startGame function to be called by level buttons
-    // Make it accessible globally
-  </script>
-
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-    // Ensure DOM is fully loaded before initializing Firebase and updating UI
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Firebase configuration (taken directly from your original code)
-        const firebaseConfig = {
-            apiKey: "AIzaSyC1Fho5b99jL4-H4j_OFtSKmt8TV1X2PdM",
-            authDomain: "greatchem12.firebaseapp.com",
-            projectId: "greatchem12",
-            storageBucket: "greatchem12.firebasestorage.app",
-            messagingSenderId: "1083119029036",
-            appId: "1:1083119029036:web:596c450f7ba58138767a89",
-            measurementId: "G-MX4CCYK774"
-        };
+    document.addEventListener('DOMContentLoaded', async () => {
+        const firebaseConfig = {
+        apiKey: "AIzaSyC1Fho5b99jL4-H4j_OFtSKmt8TV1X2PdM",
+        authDomain: "greatchem12.firebaseapp.com",
+        projectId: "greatchem12",
+        storageBucket: "greatchem12.firebasestorage.app",
+        messagingSenderId: "1083119029036",
+        appId: "1:1083119029036:web:596c450f7ba58138767a89",
+        measurementId: "G-MX4CCYK774"
+        };
 
-        // Initialize Firebase app and Firestore database
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // Get userId from the current page's URL parameters
-        const params = new URLSearchParams(window.location.search);
-        const userId = params.get("userId");
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get("userId");
 
-        // Display the userId or a message if not found
-        document.getElementById("uid-display").innerText =
-            userId ? `User ID: ${userId}` : "User ID tidak ditemukan";
+        document.getElementById("uid-display").innerText =
+        userId ? `Mari selesaikan tantangan` : "Harap login";
 
-        // Store userId in localStorage for persistence across pages (if needed)
-        if (userId) {
-            localStorage.setItem("firebaseUserId", userId);
-        }
-
-        (async () => {
-          try {
-            const testRef = doc(db, "debug", "connection-test");
-            await setDoc(testRef, { connectedAt: new Date().toISOString() });
-            console.log("✅ Firestore connected, test doc written");
-          } catch (e) {
-            console.error("❌ Firestore error:", e);
-          }
-        })();
-
-        // Function to initialize user data in Firestore or retrieve existing data
-        async function initUser() {
-            if (!userId) return; // If no userId, stop here
-            const userRef = doc(db, "users", userId);
-            const snap = await getDoc(userRef);
-
-            if (!snap.exists()) {
-                // If user document doesn't exist, create it with all levels initially false
-                await setDoc(userRef, {
-                    level1: false,
-                    level2: false,
-                    level3: false,
-                    level4: false,
-                });
-                return { level1: false, level2: false, level3: false, level4: false };
-            }
-            // If user document exists, return their level data
-            return snap.data();
-        }
-
-        // Function to update the UI (button states) based on user's completed levels
-        function updateUI(levels) {
-            for (let i = 1; i <= 4; i++) {
-                const btn = document.getElementById(`level${i}`);
-                if (i === 1) {
-                    // Level 1 is always active and clickable
-                   btn.classList.remove("locked");
-                    btn.onclick = () => window.startGame(i);
-                } else {
-                    // For other levels, check if the *previous* level is completed (true in Firestore)
-                    if (levels[`level${i - 1}`]) {
-                        btn.classList.remove("locked"); // Unlock the current level
-                        btn.onclick = () => window.startGame(i); // Enable click handler
-                    } else {
-                        btn.classList.add("locked"); // Keep it locked
-                        btn.onclick = null; // Disable click
-                    }
-                }
-            }
-        }
+        if (userId) {
+        localStorage.setItem("firebaseUserId", userId);
+        }
 
         function startGame(level) {
-          console.log(`Memulai game level ${level}`);
+        console.log(`Memulai game level ${level}`);
+        if (!userId) {
+            showCustomAlert("User ID tidak ditemukan di URL!");
+            return;
+        }
+        window.location.href = `puzzle${level}.html?userId=${userId}`;
+        }
 
-          const urlParams = new URLSearchParams(window.location.search);
-          const userId = urlParams.get("userId");
+        async function initUser() {
+        if (!userId) return;
+        const userRef = doc(db, "users", userId);
+        const snap = await getDoc(userRef);
 
-          if (!userId) {
-            showCustomAlert("User ID tidak ditemukan di URL!"); // Use custom alert
-            return;
-          }
+        if (!snap.exists()) {
+            await setDoc(userRef, {
+            level1: false,
+            level2: false,
+            level3: false,
+            level4: false,
+            });
+            return { level1: false, level2: false, level3: false, level4: false };
+        }
+        return snap.data();
+        }
 
-          // Navigate to the puzzle page for the selected level
-          window.location.href = `puzzle${level}.html?userId=${userId}`;
-        }
-        window.startGame = startGame; 
+        function updateUI(levels) {
+        for (let i = 1; i <= 4; i++) {
+            const btn = document.getElementById(`level${i}`);
+            if (i === 1) {
+            btn.classList.remove("locked");
+            btn.onclick = () => startGame(i);
+            } else {
+            if (levels[`level${i - 1}`]) {
+                btn.classList.remove("locked");
+                btn.onclick = () => startGame(i);
+            } else {
+                btn.classList.add("locked");
+                btn.onclick = null;
+            }
+            }
+        }
+        }
 
-        // Execute initUser and updateUI once the DOM is ready
-        const levels = await initUser();
-        if (levels) {
-            updateUI(levels);
-        }
-    });
-  </script>
+        const levels = await initUser();
+        if (levels) {
+        updateUI(levels);
+        }
+    });
+    </script>
 </body>
 </html>

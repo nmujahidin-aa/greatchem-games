@@ -9,7 +9,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
     import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyC1Fho5b99jL4-H4j_OFtSKmt8TV1X2PdM",
       authDomain: "greatchem12.firebaseapp.com",
@@ -23,18 +22,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Ambil userId dari URL
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("userId");
 
-    // Fungsi update Firestore
     async function markLevelComplete() {
       if (!userId) return;
       const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, { level1: true });
+      await updateDoc(userRef, { level4: true });
     }
 
-    // Export ke window biar bisa dipanggil dari bawah
     window.markLevelComplete = markLevelComplete;
     window.userId = userId;
   </script>
@@ -70,26 +66,36 @@
   </style>
 </head>
 <body>
-  <h1>Pengaruh Katalis</h1>
-  <p style="margin-top:-10px;">Urutkan fenomena pengaruh katalis terhadap laju reaksi pada puzzle berikut</p>
+  <h1>Pengaruh Luas Permukaan</h1>
+  <p style="margin-top:-10px;">Urutkan fenomena pengaruh luas permukaan terhadap laju reaksi pada puzzle berikut</p>
   <div id="puzzle-board"></div>
 
   <script>
     const board = document.getElementById("puzzle-board");
 
-    const pieces = [
-      {id: 0, bg: "0px 0px"},
-      {id: 1, bg: "-150px 0px"},
-      {id: 2, bg: "0px -150px"},
-      {id: 3, bg: "-150px -150px"},
-    ];
+    board.style.gridTemplateColumns = "repeat(5, 150px)";
+    board.style.gridTemplateRows = "repeat(5, 150px)";
+
+    const pieces = [];
+    let id = 0;
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 5; col++) {
+        pieces.push({
+          id: id++,
+          bg: `-${col * 150}px -${row * 150}px`
+        });
+      }
+    }
 
     let shuffled = pieces.sort(() => Math.random() - 0.5);
 
     shuffled.forEach((p) => {
       const div = document.createElement("div");
       div.classList.add("piece");
-      div.style.backgroundImage = "url('images/level_1.png')";
+      div.style.width = "150px";
+      div.style.height = "150px";
+      div.style.backgroundImage = "url('images/level_4.jpg')";
+      div.style.backgroundSize = "750px 750px";
       div.style.backgroundPosition = p.bg;
       div.setAttribute("data-id", p.id);
       div.setAttribute("draggable", "true");
@@ -123,7 +129,6 @@
       piece.addEventListener("drop", handleDrop);
     });
 
-    // Cek kemenangan
     function checkWin() {
       const pieces = document.querySelectorAll(".piece");
       let correct = true;
@@ -148,5 +153,7 @@
       }
     }
   </script>
+
+
 </body>
 </html>
